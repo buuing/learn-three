@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 红色立方体
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    )
+    scene.add(mesh)
+
+    // 画布大小
+    const sizes = {
+      width: 800,
+      height: 600
+    }
+
+    // // 正交相机
+    // const aspectRatio = sizes.width / sizes.height
+    // const camera = new THREE.OrthographicCamera(
+    //   -1 * aspectRatio,
+    //   1 * aspectRatio,
+    //   1,
+    //   -1,
+    //   0.1,
+    //   100
+    // )
+
+    // 透视相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+    camera.position.z = 3
+    camera.lookAt(mesh.position)
+    scene.add(camera)
+
+    // 鼠标的位置
+    const cursor = { x: 0, y: 0 }
+    window.addEventListener('mousemove', (e) => {
+      cursor.x = e.clientX / sizes.width - 0.5
+      cursor.y = -(e.clientY / sizes.height - 0.5)
+    })
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+    controls.enableDamping = true // 阻尼
+
+    const render = () => {
+
+      // // 通过鼠标移动来改变相机的位置
+      // // camera.position.x = cursor.x * 10
+      // // camera.position.y = cursor.y * 10
+      // camera.position.x = Math.sin(cursor.x * Math.PI * 2) * 3
+      // camera.position.z = Math.cos(cursor.x * Math.PI * 2) * 3
+      // camera.position.y = cursor.y * 5
+      // camera.lookAt(mesh.position)
+
+      // 更新控制器
+      controls.update()
+
+      // 渲染
+      renderer.render(scene, camera)
+      // 帧动画
+      window.requestAnimationFrame(render)
+    }
+    render()
+
+  </script>
+</body>
+</html>
