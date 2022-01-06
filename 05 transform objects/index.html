@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 红色立方体
+    const geometry = new THREE.BoxGeometry(1, 1, 1)
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    const mesh = new THREE.Mesh(geometry, material)
+    scene.add(mesh)
+
+    // 设置物体的位置
+    // mesh.position.x = 0.7
+    // mesh.position.y = -0.6
+    // mesh.position.z = 1
+    mesh.position.set(0.7, -0.6, 1)
+
+    // 获取物体中心到原点之间的距离
+    console.log(mesh.position.length()) // 1.36
+
+    // 获得任意三维坐标到物体中心的距离
+    console.log(mesh.position.distanceTo(new THREE.Vector3(1, 1, 1))) // 1.62
+
+    // 让物体中心到原点的距离等于1
+    mesh.position.normalize()
+    console.log(mesh.position.length()) // 1
+
+    // 设置物体的缩放
+    // mesh.scale.x = 2
+    // mesh.scale.y = 0.5
+    // mesh.scale.z = 0.5
+    mesh.scale.set(2, 0.5, 0.5)
+
+    // 设置物体的旋转
+    mesh.rotation.reorder('YXZ') // 改变旋转顺序
+    mesh.rotation.x = Math.PI * 0.25
+    mesh.rotation.y = Math.PI * 0.25
+
+    // 辅助坐标系
+    const axesHelper = new THREE.AxesHelper()
+    scene.add(axesHelper)
+
+    // 创建一个组
+    const group = new THREE.Group()
+    scene.add(group)
+    // 创建三个立方体
+    const cube1 = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    )
+    const cube2 = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+    )
+    const cube3 = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({ color: 0x0000ff })
+    )
+    cube2.position.x = -2
+    cube3.position.x = 2
+    // 添加到组
+    group.add(cube1)
+    group.add(cube2)
+    group.add(cube3)
+    // 对组进行操作时, 组内所有的物体都会拥有相同的效果
+    group.position.y = 1
+    group.scale.x = 0.5
+    group.rotation.x = 1
+
+    // 画布大小
+    const sizes = {
+      width: 800,
+      height: 600
+    }
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.z = 3
+    scene.add(camera)
+
+    // 让相机看向物体
+    camera.lookAt(mesh.position)
+
+    // 获得相机到物体中心的距离
+    console.log(mesh.position.distanceTo(camera.position)) // 2.36
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.render(scene, camera)
+
+  </script>
+</body>
+</html>
