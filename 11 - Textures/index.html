@@ -32,18 +32,39 @@
     loadingManager.onError = () => console.log('onError')
     // 纹理加载器
     const textureLoader = new THREE.TextureLoader(loadingManager)
-    const colorTexture = textureLoader.load('./textures/door/color.jpg')
-    const alphaTexture = textureLoader.load('./textures/door/alpha.jpg')
-    const heightTexture = textureLoader.load('./textures/door/height.jpg')
-    const normalTexture = textureLoader.load('./textures/door/normal.jpg')
-    const ambientOcclusionTexture = textureLoader.load('./textures/door/ambientOcclusion.jpg')
-    const metalnessTexture = textureLoader.load('./textures/door/metalness.jpg')
-    const roughnessTexture = textureLoader.load('./textures/door/roughness.jpg')
+    // const colorTexture = textureLoader.load('./textures/checkerboard-8x8.png')
+    const colorTexture = textureLoader.load('./textures/minecraft.png')
+
+    // // 设置纹理分别在 U/V 方向上重复多少次
+    // colorTexture.repeat.x = 2
+    // colorTexture.repeat.y = 2
+    // // 重复平铺
+    // colorTexture.wrapS = THREE.RepeatWrapping
+    // colorTexture.wrapT = THREE.RepeatWrapping
+    // // 镜像重复平铺
+    // colorTexture.wrapS = THREE.MirroredRepeatWrapping
+    // colorTexture.wrapT = THREE.MirroredRepeatWrapping
+    // // 偏移量
+    // colorTexture.offset.x = 0.5
+    // colorTexture.offset.y = 0.5
+    // // 旋转
+    // colorTexture.rotation = Math.PI / 4
+    // colorTexture.center.set(0.5, 0.5)
+
+    // 最小过滤器
+    colorTexture.minFilter = THREE.NearestFilter
+    // 放大过滤器
+    colorTexture.magFilter = THREE.NearestFilter
+    /**
+     * 纹理贴图会根据摄像机距离的远近，选择使用不同精度的贴图
+     * 缺点是占用内存, 优点是可以优化显存带宽, 减少渲染
+     */
+    colorTexture.generateMipmaps = false
 
     // 场景
     const scene = new THREE.Scene()
 
-    // 红色立方体
+    // 立方体
     const geometry = new THREE.BoxGeometry(1, 1, 1)
     const material = new THREE.MeshBasicMaterial({
       map: colorTexture
@@ -71,7 +92,7 @@
 
     // 相机
     const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
-    camera.position.z = 3
+    camera.position.z = 2
     scene.add(camera)
 
     // 渲染器
