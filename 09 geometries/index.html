@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 几何体
+    const geometry = new THREE.BufferGeometry()
+
+    // 画一个正方形
+    const positionsArray = new Float32Array([
+      0, 0, 0,
+      1, 0, 0,
+      0, 1, 0,
+      0, 1, 0,
+      1, 0, 0,
+      1, 1, 0,
+    ])
+
+    // // 随机画 50 个三角形
+    // const count = 50
+    // const positionsArray = new Float32Array(count * 3 * 3)
+    // for (let i = 0; i < count * 3 * 3; i++) {
+    //   positionsArray[i] = (Math.random() - 0.5) * 5
+    //   positionsArray[i + 1] = (Math.random() - 0.5) * 5
+    //   positionsArray[i + 2] = (Math.random() - 0.5) * 5
+    // }
+
+    const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
+    geometry.setAttribute('position', positionsAttribute)
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xff0000,
+      wireframe: true
+    })
+    const mesh = new THREE.Mesh(geometry, material)
+    scene.add(mesh)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.z = 3
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+
+    // 动画
+    const render = () => {
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>

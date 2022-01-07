@@ -25,7 +25,12 @@
   - 学习 `OrbitControls` 轨道控制器的概念及使用
 
 - 08 fullscreen and resizing
-  - 设置 canvas 画布宽高撑满浏览器的页面
+  - 设置 canvas 画布的尺寸撑满页面
   - 监听 onresize 触发时重新设置画布尺寸
   - 了解屏幕像素比, 设置 dpr 使画布渲染更加清晰
   - 监听鼠标双击事件触发时进入全屏模式
+
+- 09 geometries
+  - 学习立方体是如何通过顶点组成若干三角形绘制的
+  - ~~学习 `Geometry` 自定义顶点信息创建几何图形~~ (已废弃)
+  - 学习 `BufferGeometry` 自定义顶点信息创建几何图形
