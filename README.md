@@ -23,3 +23,9 @@
   - 学习 `OrthographicCamera` 正交相机的概念和使用
   - 通过鼠标移动来改变相机的位置
   - 学习 `OrbitControls` 轨道控制器的概念及使用
+
+- 08 fullscreen and resizing
+  - 设置 canvas 画布宽高撑满浏览器的页面
+  - 监听 onresize 触发时重新设置画布尺寸
+  - 了解屏幕像素比, 设置 dpr 使画布渲染更加清晰
+  - 监听鼠标双击事件触发时进入全屏模式
