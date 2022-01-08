@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+    import { FontLoader } from '../lib/FontLoader.js'
+    import { TextGeometry } from '../lib/TextGeometry.js'
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 纹理
+    const textureLoader = new THREE.TextureLoader()
+    const matcapTexture = textureLoader.load('./textures/matcaps/7.png')
+
+    // 字体
+    const fontLoader = new FontLoader()
+    fontLoader.load('./fonts/helvetiker_regular.typeface.json', font => {
+      const textGeometry = new TextGeometry('Three.js', {
+        font: font,
+        size: 0.5, // 字体大小
+        height: 0.1, // 字体深度
+        curveSegments: 6,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelOffset: 0,
+        bevelSegments: 4,
+      })
+      const textMaterial = new THREE.MeshMatcapMaterial({
+        matcap: matcapTexture,
+      })
+      const text = new THREE.Mesh(textGeometry, textMaterial)
+      scene.add(text)
+
+      // 字体居中
+      // textGeometry.computeBoundingBox()
+      // textGeometry.translate(
+      //   -(textGeometry.boundingBox.max.x + textGeometry.boundingBox.min.x) / 2,
+      //   -(textGeometry.boundingBox.max.y + textGeometry.boundingBox.min.y) / 2,
+      //   -(textGeometry.boundingBox.max.z + textGeometry.boundingBox.min.z) / 2,
+      // )
+      textGeometry.center()
+
+      // 甜甜圈
+      console.time('donuts')
+      const donutGeometry = new THREE.TorusGeometry(0.3, 0.2, 20, 45)
+      const donutMaterial = textMaterial
+      for (let i = 0; i < 300; i++) {
+        const donut = new THREE.Mesh(donutGeometry, donutMaterial)
+
+        donut.position.x = (Math.random() - 0.5) * 10
+        donut.position.y = (Math.random() - 0.5) * 10
+        donut.position.z = (Math.random() - 0.5) * 10
+
+        donut.rotation.x = Math.random() * Math.PI
+        donut.rotation.y = Math.random() * Math.PI
+
+        const scale = Math.random() + 0.2
+        donut.scale.set(scale, scale, scale)
+
+        scene.add(donut)
+      }
+      console.timeEnd('donuts')
+    })
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.z = 3
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+
+    const render = () => {
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      // 帧动画
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
