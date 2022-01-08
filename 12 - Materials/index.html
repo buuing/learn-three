@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+    import { GUI } from '../lib/dat.gui.js'
+
+    // debug
+    const gui = new GUI()
+    const parameters = {}
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 纹理加载器
+    const textureLoader = new THREE.TextureLoader()
+    const cubeTextureLoader = new THREE.CubeTextureLoader()
+
+    // 纹理
+    const colorTexture = textureLoader.load('./textures/door/color.jpg')
+    const alphaTexture = textureLoader.load('./textures/door/alpha.jpg')
+    const heightTexture = textureLoader.load('./textures/door/height.jpg')
+    const normalTexture = textureLoader.load('./textures/door/normal.jpg')
+    const ambientOcclusionTexture = textureLoader.load('./textures/door/ambientOcclusion.jpg')
+    const metalnessTexture = textureLoader.load('./textures/door/metalness.jpg')
+    const roughnessTexture = textureLoader.load('./textures/door/roughness.jpg')
+    const matcapTexture = textureLoader.load('./textures/matcaps/3.png')
+    const gradientTexture = textureLoader.load('./textures/gradients/3.jpg')
+    gradientTexture.minFilter = THREE.NearestFilter
+    gradientTexture.magFilter = THREE.NearestFilter
+    gradientTexture.generateMipmaps = false
+
+    // 环境贴图纹理
+    const environmentMapTexture = cubeTextureLoader.load([
+      './textures/environmentMaps/0/px.jpg',
+      './textures/environmentMaps/0/nx.jpg',
+      './textures/environmentMaps/0/py.jpg',
+      './textures/environmentMaps/0/ny.jpg',
+      './textures/environmentMaps/0/pz.jpg',
+      './textures/environmentMaps/0/nz.jpg',
+    ])
+
+    // // 基础材质
+    // const material = new THREE.MeshBasicMaterial()
+    // // 颜色
+    // material.color = new THREE.Color('pink')
+    // // 贴图
+    // material.map = colorTexture
+    // // 透明度
+    // // material.opacity = 0.5
+    // material.transparent = true
+    // material.alphaMap = alphaTexture
+    // // 渲染面
+    // material.side = THREE.DoubleSide
+
+    // // 法线材质
+    // const material = new THREE.MeshNormalMaterial()
+    // // 线段
+    // // material.wireframe = true
+    // // 平面阴影
+    // material.flatShading = true
+
+    // // 材质捕捉
+    // const material = new THREE.MeshMatcapMaterial()
+    // material.matcap = matcapTexture
+
+    // // 深度材质
+    // const material = new THREE.MeshDepthMaterial()
+
+    // // 兰伯特材质
+    // const material = new THREE.MeshLambertMaterial()
+
+    // // Phong材质
+    // const material = new THREE.MeshPhongMaterial()
+    // // 光泽度
+    // material.shininess = 100
+    // // 反光颜色
+    // material.specular = new THREE.Color(0xff0000)
+
+    // // 卡通材质
+    // const material = new THREE.MeshToonMaterial()
+    // // 渐变梯度
+    // material.gradientMap = gradientTexture
+
+    // // 标准网格材质
+    // const material = new THREE.MeshStandardMaterial()
+    // // // 金属化
+    // material.metalness = 0
+    // // // 粗糙度
+    // material.roughness = 0
+    // // 普通贴图
+    // material.map = colorTexture
+    // // 环境遮挡贴图
+    // material.aoMap = ambientOcclusionTexture
+    // material.aoMapIntensity = 1
+    // // 位移贴图
+    // material.displacementMap = heightTexture
+    // material.displacementScale = 0.1
+    // // 金属贴图
+    // material.metalnessMap = metalnessTexture
+    // // 粗糙贴图
+    // material.roughnessMap = roughnessTexture
+    // // 法线贴图
+    // material.normalMap = normalTexture
+    // material.normalScale.set(0.5, 0.5)
+    // // 阿尔法贴图
+    // material.transparent = true
+    // material.alphaMap = alphaTexture
+
+    // 标准网格材质
+    const material = new THREE.MeshStandardMaterial()
+    // 金属化
+    material.metalness = 0.9
+    // 粗糙度
+    material.roughness = 0
+    // 环境贴图
+    material.envMap = environmentMapTexture
+
+    gui.add(material, 'metalness').min(0).max(1).step(0.0001)
+    gui.add(material, 'roughness').min(0).max(1).step(0.0001)
+    gui.add(material, 'aoMapIntensity').min(0).max(10).step(0.0001)
+    gui.add(material, 'displacementScale').min(0).max(1).step(0.0001)
+
+    // 物体
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material)
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8, 100, 100, 100), material)
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.2, 64, 128), material)
+    sphere.position.x = -1.5
+    torus.position.x = 1.5
+    scene.add(sphere, box, torus)
+
+    // uv2
+    box.geometry.setAttribute(
+      'uv2',
+      new THREE.BufferAttribute(box.geometry.attributes.uv.array, 3)
+    )
+
+    // 光源
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+    const pointLight = new THREE.PointLight(0xffffff, 0.5)
+    pointLight.position.set(2, 3, 4)
+    scene.add(ambientLight, pointLight)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.z = 3
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+
+    // clock
+    const clock = new THREE.Clock()
+
+    const render = () => {
+      // 动画
+      const elapsedTime = clock.getElapsedTime()
+      sphere.rotation.x = 0.1 * elapsedTime
+      box.rotation.x = 0.1 * elapsedTime
+      torus.rotation.x = 0.1 * elapsedTime
+      sphere.rotation.y = 0.1 * elapsedTime
+      box.rotation.y = 0.1 * elapsedTime
+      torus.rotation.y = 0.1 * elapsedTime
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      // 帧动画
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
