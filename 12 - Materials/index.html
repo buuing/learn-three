@@ -125,6 +125,8 @@
     // 环境贴图
     material.envMap = environmentMapTexture
 
+    scene.background = environmentMapTexture
+
     gui.add(material, 'metalness').min(0).max(1).step(0.0001)
     gui.add(material, 'roughness').min(0).max(1).step(0.0001)
     gui.add(material, 'aoMapIntensity').min(0).max(10).step(0.0001)
