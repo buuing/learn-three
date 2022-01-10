@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+    import { GUI } from '../lib/dat.gui.js'
+
+    // debug
+    const gui = new GUI()
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 雾
+    scene.fog = new THREE.Fog('#262837', 1, 15)
+
+    // 纹理
+    const textureLoader = new THREE.TextureLoader()
+
+    const doorColorTexture = textureLoader.load('./textures/door/color.jpg')
+    const doorAlphaTexture = textureLoader.load('./textures/door/alpha.jpg')
+    const doorHeightTexture = textureLoader.load('./textures/door/height.jpg')
+    const doorNormalTexture = textureLoader.load('./textures/door/normal.jpg')
+    const doorAmbientOcclusionTexture = textureLoader.load('./textures/door/ambientOcclusion.jpg')
+    const doorMetalnessTexture = textureLoader.load('./textures/door/metalness.jpg')
+    const doorRoughnessTexture = textureLoader.load('./textures/door/roughness.jpg')
+
+    const bricksColorTexture = textureLoader.load('./textures/bricks/color.jpg')
+    const bricksAmbientOcclusionTexture = textureLoader.load('./textures/bricks/ambientOcclusion.jpg')
+    const bricksNormalTexture = textureLoader.load('./textures/bricks/normal.jpg')
+    const bricksRoughnessTexture = textureLoader.load('./textures/bricks/roughness.jpg')
+
+    const grassColorTexture = textureLoader.load('./textures/grass/color.jpg')
+    const grassAmbientOcclusionTexture = textureLoader.load('./textures/grass/ambientOcclusion.jpg')
+    const grassNormalTexture = textureLoader.load('./textures/grass/normal.jpg')
+    const grassRoughnessTexture = textureLoader.load('./textures/grass/roughness.jpg')
+    const grassTextures = [
+      grassColorTexture,
+      grassAmbientOcclusionTexture,
+      grassNormalTexture,
+      grassRoughnessTexture
+    ]
+    grassTextures.forEach(texture => {
+      texture.repeat.set(8, 8)
+      texture.wrapS = THREE.RepeatWrapping
+      texture.wrapT = THREE.RepeatWrapping
+    })
+
+    // 房子
+    const house = new THREE.Group()
+    scene.add(house)
+
+    // 围墙
+    const walls = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 2.5, 4),
+      new THREE.MeshStandardMaterial({
+        map: bricksColorTexture,
+        aoMap: bricksAmbientOcclusionTexture,
+        normalMap: bricksNormalTexture,
+        roughnessMap: bricksRoughnessTexture
+      })
+    )
+    walls.geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(
+      walls.geometry.attributes.uv.array, 2
+    ))
+    walls.position.y = 1.25
+    house.add(walls)
+
+    // 房顶
+    const roof = new THREE.Mesh(
+      new THREE.ConeGeometry(3.5, 1, 4),
+      new THREE.MeshStandardMaterial({ color: '#b35f45' })
+    )
+    roof.position.y = 2.5 + 0.5
+    roof.rotation.y = Math.PI / 4
+    house.add(roof)
+
+    // 门
+    const door = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.2, 2.2, 100, 100),
+      new THREE.MeshStandardMaterial({
+        map: doorColorTexture,
+        transparent: true,
+        alphaMap: doorAlphaTexture,
+        aoMap: doorAmbientOcclusionTexture,
+        displacementMap: doorHeightTexture,
+        displacementScale: 0.2,
+        normalMap: doorNormalTexture,
+        metalnessMap: doorMetalnessTexture,
+        roughnessMap: doorRoughnessTexture
+      })
+    )
+    door.geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(
+      door.geometry.attributes.uv.array, 2
+    ))
+    door.position.y = 1
+    door.position.z = 2 + 0.01
+    house.add(door)
+
+    // 草丛
+    const bushGeometry = new THREE.SphereGeometry(1, 16, 16)
+    const bushMaterial = new THREE.MeshStandardMaterial({ color: '#89c854' })
+
+    const bush1 = new THREE.Mesh(bushGeometry, bushMaterial)
+    bush1.scale.set(0.5, 0.5, 0.5)
+    bush1.position.set(0.8, 0.2, 2.2)
+    house.add(bush1)
+
+    const bush2 = new THREE.Mesh(bushGeometry, bushMaterial)
+    bush2.scale.set(0.25, 0.25, 0.25)
+    bush2.position.set(1.4, 0.1, 2.1)
+    house.add(bush2)
+
+    const bush3 = new THREE.Mesh(bushGeometry, bushMaterial)
+    bush3.scale.set(0.4, 0.4, 0.4)
+    bush3.position.set(-0.8, 0.1, 2.2)
+    house.add(bush3)
+
+    const bush4 = new THREE.Mesh(bushGeometry, bushMaterial)
+    bush4.scale.set(0.15, 0.15, 0.15)
+    bush4.position.set(-1, 0.05, 2.6)
+    house.add(bush4)
+
+    // 墓碑
+    const graves = new THREE.Group()
+    scene.add(graves)
+
+    const gravGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2)
+    const gravMaterial = new THREE.MeshStandardMaterial({ color: '#b2b6b1' })
+
+    for (let i = 0; i < 50; i++) {
+      const grav = new THREE.Mesh(gravGeometry, gravMaterial)
+      const angle = Math.random() * Math.PI * 2
+      const r = Math.random() * 5 + 4
+      const x = Math.sin(angle) * r
+      const z = Math.cos(angle) * r
+      grav.position.set(x, 0.3, z)
+      grav.rotation.y = (Math.random() - 0.5) * 0.4
+      grav.rotation.z = (Math.random() - 0.5) * 0.4
+      grav.castShadow = true
+      graves.add(grav)
+    }
+
+    // 地板
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.MeshStandardMaterial({
+        map: grassColorTexture,
+        aoMap: grassAmbientOcclusionTexture,
+        normalMap: grassNormalTexture,
+        roughnessMap: grassRoughnessTexture
+      })
+    )
+    floor.geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(
+      floor.geometry.attributes.uv.array, 2
+    ))
+    floor.rotation.x = -Math.PI / 2
+    scene.add(floor)
+
+    // 环境光
+    const ambientLight = new THREE.AmbientLight('#b9d5ff', 0.12)
+    gui.add(ambientLight, 'intensity').min(0).max(1).step(0.001)
+    scene.add(ambientLight)
+
+    // 平行光
+    const moonLight = new THREE.DirectionalLight('#b9d5ff', 0.12)
+    moonLight.position.set(4, 5, -2)
+    gui.add(moonLight, 'intensity').min(0).max(1).step(0.001)
+    scene.add(moonLight)
+
+    // 点光源
+    const doorLight = new THREE.PointLight('#ff7d47', 1, 7)
+    doorLight.position.set(0, 2.2, 2.7)
+    scene.add(doorLight)
+
+    // 幽灵
+    const ghost = new THREE.PointLight('#00ffff', 2, 3)
+    scene.add(ghost)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.x = 4
+    camera.position.y = 2
+    camera.position.z = 5
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setClearColor('#262837')
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 阴影
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+    moonLight.castShadow = true
+    doorLight.castShadow = true
+    ghost.castShadow = true
+    walls.castShadow = true
+    bush1.castShadow = true
+    bush2.castShadow = true
+    bush3.castShadow = true
+    bush4.castShadow = true
+    floor.receiveShadow = true
+    walls.receiveShadow = true
+
+    doorLight.shadow.mapSize.width = 256
+    doorLight.shadow.mapSize.height = 256
+    doorLight.shadow.camera.far = 7
+    ghost.shadow.mapSize.width = 256
+    ghost.shadow.mapSize.height = 256
+    ghost.shadow.camera.far = 7
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+
+    // 时间
+    const clock = new THREE.Clock()
+
+    const render = () => {
+      const time = clock.getElapsedTime()
+      // 动画
+      const angle = time * 0.2
+      ghost.position.x = Math.cos(angle) * (6 + Math.sin(time * 0.32))
+      ghost.position.z = Math.sin(angle) * (6 + Math.sin(time * 0.5))
+      ghost.position.y = Math.sin(angle * 4) + Math.sin(time * 2.5)
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
