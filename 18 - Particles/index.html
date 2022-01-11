@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 纹理
+    const textureLoader = new THREE.TextureLoader()
+    const particlesTexture = textureLoader.load('./textures/particles/1.png')
+
+    // 粒子
+    const particlesGeometry = new THREE.BufferGeometry()
+    const count = 10000
+    const positions = new Float32Array(count * 3)
+    const colors = new Float32Array(count * 3)
+    for (let i = 0; i < count; i += 3) {
+      positions[i] = (i / 100) / 10 - 5
+      positions[i + 1] = 0
+      positions[i + 2] = (i % 100) / 10 - 5
+    }
+    for (let i = 0; i < count; i ++) {
+      colors[i] = Math.random()
+    }
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    const particlesMaterial = new THREE.PointsMaterial({
+      color: '#ff88cc',
+      size: 0.05,
+      sizeAttenuation: true,
+      transparent: true,
+      alphaMap: particlesTexture,
+      alphaTest: 0.001, // 小于该值则不会进行渲染
+      // depthTest: false, // 深度测试可以保证物体之间能有正确的遮挡
+      depthWrite: false, // 是否更新深度缓冲区
+      blending: THREE.AdditiveBlending, // 混合当前像素的颜色渲染, 趋于白色
+      vertexColors: true // 顶点颜色
+    })
+
+    const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+    scene.add(particles)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.y = 0.5
+    camera.position.z = 3
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+
+    // 时间
+    const clock = new THREE.Clock()
+
+    const render = () => {
+      // 动画
+      const time = clock.getElapsedTime()
+      particles.rotation.y = time / 10
+      for (let i = 0; i < count; i++) {
+        const k = i * 3
+        const x = particlesGeometry.attributes.position.array[k]
+        const z = particlesGeometry.attributes.position.array[k + 2]
+        particlesGeometry.attributes.position.array[k + 1] = (
+          Math.sin(time + x) + Math.sin(time + z)
+        ) / 5
+      }
+      particlesGeometry.attributes.position.needsUpdate = true
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
