@@ -100,3 +100,45 @@
 - 23 - Imported models
   - 学习使用 `gltfLoader` 加载模型, 以及如何使用 `dracoLoader`
   - 学习使用 `AnimationMixer` 触发模型的动画并控制播放速度
+
+- 24 - Custom model with Blender
+  - 下载安装 `Blender` 软件, 学习基本的使用和操作
+  - 创建一个汉堡包模型并导出 `glft` 格式, 然后在页面中引入
+
+<!-- - 25 - Realistic render -->
+
+<!-- - 26 - Code structuring for bigger projects -->
+
+<!-- <br /> -->
+
+<!-- ### 04 Shaders -->
+
+<!-- - 27 - Shaders -->
+
+<!-- - 28 - Shader patterns -->
+
+<!-- - 29 - Raging sea -->
+
+<!-- - 30 - Animated galaxy -->
+
+<!-- - 31 - Modified materials -->
+
+<!-- <br /> -->
+
+<!-- ### 05 Extra -->
+
+<!-- - 32 - Post-processing -->
+
+<!-- - 33 - Performance tips -->
+
+<!-- - 34 - Intro and loading progress -->
+
+<!-- - 35 - Mixing HTML and WebGL -->
+
+<!-- - 36 - Creating a scene in Blender -->
+
+<!-- - 37 - Baking and exporting the scene -->
+
+<!-- - 38 - Importing and optimizing the scene -->
+
+<!-- - 39 - Adding details to the scene -->
