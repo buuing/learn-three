@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+    import { GLTFLoader } from '../lib/GLTFLoader.js'
+    import { DRACOLoader } from '../lib/DRACOLoader.js'
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 加载模型
+    const dracoLoader = new DRACOLoader()
+    dracoLoader.setDecoderPath('/lib/draco/')
+
+    const gltfLoader = new GLTFLoader()
+    gltfLoader.setDRACOLoader(dracoLoader)
+
+    // 小黄鸭
+    gltfLoader.load('./models/Duck/glTF-Draco/Duck.gltf', (gltf) => {
+      gltf.scene.position.z = -1
+      gltf.scene.rotation.y = Math.PI
+      scene.add(gltf.scene)
+    }, (progress) => {
+      console.log('progress', progress)
+    }, () => {
+      console.log('error')
+    })
+
+    // 狐狸
+    let mixer = null
+    gltfLoader.load('./models/Fox/glTF/Fox.gltf', (gltf) => {
+      mixer = new THREE.AnimationMixer(gltf.scene)
+      const look = mixer.clipAction(gltf.animations[0])
+      const walk = mixer.clipAction(gltf.animations[1])
+      const run = mixer.clipAction(gltf.animations[2])
+      look.play()
+      walk.play()
+      gltf.scene.scale.set(0.025, 0.025, 0.025)
+      gltf.scene.rotation.y = -Math.PI / 2
+      gltf.scene.position.z = 1.5
+      scene.add(gltf.scene)
+    }, (progress) => {
+      console.log('progress', progress)
+    }, () => {
+      console.log('error')
+    })
+
+    // 地面
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 10),
+      new THREE.MeshStandardMaterial({
+        color: '#777777',
+        metalness: 0.3,
+        roughness: 0.4,
+      })
+    )
+    floor.receiveShadow = true
+    floor.rotation.x = -Math.PI / 2
+    scene.add(floor)
+
+    // 环境光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7)
+    scene.add(ambientLight)
+
+    // 平行光
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
+    directionalLight.castShadow = true
+    directionalLight.shadow.mapSize.set(1024, 1024)
+    directionalLight.shadow.camera.far = 15
+    directionalLight.shadow.camera.left = -7
+    directionalLight.shadow.camera.top = 7
+    directionalLight.shadow.camera.right = 7
+    directionalLight.shadow.camera.bottom = -7
+    directionalLight.position.set(5, 5, 5)
+    scene.add(directionalLight)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height)
+    camera.position.set(-5, 5, 5)
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+    controls.enableDamping = true
+
+    // 时间
+    const clock = new THREE.Clock()
+    let prevTime = 0
+
+    const render = () => {
+      const time = clock.getElapsedTime()
+      const deltaTime = time - prevTime
+      prevTime = time
+      // 动画
+      if (mixer) {
+        mixer.update(deltaTime / 2)
+      }
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
