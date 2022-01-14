@@ -108,13 +108,14 @@
 - 25 - Realistic render
   - 学习如何高保真的渲染 3d 模型
 
-<!-- - 26 - Code structuring for bigger projects -->
+<br />
 
-<!-- <br /> -->
+### 04 Shaders
 
-<!-- ### 04 Shaders -->
-
-<!-- - 27 - Shaders -->
+- 27 - Shaders
+  - 学习 `GLSL` 着色器的基础语法和使用
+  - 通过 ThreeJS 给顶点着色器传值, 然后再传递给片元着色器
+  - 使用着色器处理纹理和 uv , 并实现一个国旗飘动的效果
 
 <!-- - 28 - Shader patterns -->
 

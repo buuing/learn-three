@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script id="vertexShader" type="x-shader/x-vertex">
+    // uniform mat4 projectionMatrix;
+    // uniform mat4 viewMatrix;
+    // uniform mat4 modelMatrix;
+    // attribute vec3 position;
+    // attribute vec2 uv;
+    uniform vec2 uFrequency;
+    uniform float uTime;
+    varying vec2 vUv;
+    varying float vElevation;
+    // attribute float aRandom;
+    // varying float vRandom;
+
+    void main() {
+      // gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+
+      vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+      float elevation = (
+        sin(modelPosition.x * uFrequency.x - uTime) + 
+        sin(modelPosition.y * uFrequency.y - uTime)
+      ) * 0.1;
+      modelPosition.z += elevation;
+
+      // modelPosition.z += aRandom * 0.15;
+      vec4 viewPosition = viewMatrix * modelPosition;
+      vec4 projectedPosition = projectionMatrix * viewPosition;
+      gl_Position = projectedPosition;
+
+      // vRandom = aRandom;
+      vUv = uv;
+      vElevation = elevation;
+    }
+  </script>
+
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform vec3 uColor;
+    uniform sampler2D uTexture;
+    // varying float vRandom;
+    varying vec2 vUv;
+    varying float vElevation;
+
+    void main() {
+      vec4 textureColor = texture2D(uTexture, vUv);
+      textureColor.rgb *= vElevation * 2.0 + 0.7;
+      gl_FragColor = textureColor;
+      // gl_FragColor = vec4(vUv, 1.0, 1.0);
+      // gl_FragColor = vec4(0.5, vRandom * 1.0, 1.0, 1.0);
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+    import { GUI } from '../lib/dat.gui.js'
+
+    // debug
+    const gui = new GUI()
+    const debugObject = {
+      amplitude: 0.1
+    }
+
+    // 着色器
+    const testVertexShader = document.querySelector('#vertexShader').innerText
+    const testFragmentShader = document.querySelector('#fragmentShader').innerText
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 纹理
+    const textureLoader = new THREE.TextureLoader()
+    const flagTexture = textureLoader.load('./textures/flag-zh.png')
+
+    // 几何体
+    const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
+    const count = geometry.attributes.position.count
+    const randoms = new Float32Array(count)
+    for (let i = 0; i < count; i++) {
+      randoms[i] = Math.random()
+    }
+    geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+
+    // 材质
+    const material = new THREE.ShaderMaterial({
+      vertexShader: testVertexShader,
+      fragmentShader: testFragmentShader,
+      wireframe: true,
+      side: THREE.DoubleSide,
+      transparent: true,
+      uniforms: {
+        uFrequency: { value: new THREE.Vector2(10, 5) },
+        uTime: { value: 0 },
+        uColor: { value: new THREE.Color('pink') },
+        uTexture: { value: flagTexture },
+      }
+    })
+
+    gui.add(material, 'wireframe')
+    gui.add(material.uniforms.uFrequency.value, 'x').min(0).max(20).step(0.01)
+    gui.add(material.uniforms.uFrequency.value, 'y').min(0).max(20).step(0.01)
+
+    // 物体
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.scale.y = 2 / 3
+    scene.add(mesh)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.z = 1
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+    controls.enableDamping = true
+
+    // 时间
+    const clock = new THREE.Clock()
+
+    const render = () => {
+      const elapsedTime = clock.getElapsedTime()
+      // 动画
+      material.uniforms.uTime.value = elapsedTime
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
