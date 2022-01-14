@@ -105,7 +105,8 @@
   - 下载安装 `Blender` 软件, 学习基本的使用和操作
   - 创建一个汉堡包模型并导出 `glft` 格式, 然后在页面中引入
 
-<!-- - 25 - Realistic render -->
+- 25 - Realistic render
+  - 学习如何高保真的渲染 3d 模型
 
 <!-- - 26 - Code structuring for bigger projects -->
 

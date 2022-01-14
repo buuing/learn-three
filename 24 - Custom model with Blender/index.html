@@ -25,7 +25,7 @@
     const gltfLoader = new GLTFLoader()
     gltfLoader.setDRACOLoader(dracoLoader)
 
-    gltfLoader.load('./models/hamburget.glb', (gltf) => {
+    gltfLoader.load('./models/hamburger.glb', (gltf) => {
       gltf.scene.position.y = -2.5
       scene.add(gltf.scene)
     }, (progress) => {

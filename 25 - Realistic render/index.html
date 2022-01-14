@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+    import { GUI } from '../lib/dat.gui.js'
+    import { GLTFLoader } from '../lib/GLTFLoader.js'
+    import { DRACOLoader } from '../lib/DRACOLoader.js'
+
+    // 加载器
+    const dracoLoader = new DRACOLoader()
+    dracoLoader.setDecoderPath('/lib/draco/')
+
+    const gltfLoader = new GLTFLoader()
+    gltfLoader.setDRACOLoader(dracoLoader)
+
+    const cubeTextureLoader = new THREE.CubeTextureLoader()
+
+    // debug
+    const gui = new GUI()
+    const debugObject = {
+      envMapIntensity: 3
+    }
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 更新材质
+    const updateAllMaterials = () => {
+      scene.traverse(child => {
+        if (child instanceof THREE.Mesh) {
+          child.material.envMapIntensity = debugObject.envMapIntensity
+          child.material.needsUpdate = true
+          child.castShadow = true
+          child.receiveShadow = true
+        }
+      })
+    }
+
+    // 环境贴图
+    const environmentMap = cubeTextureLoader.load([
+      './textures/environmentMaps/0/px.jpg',
+      './textures/environmentMaps/0/nx.jpg',
+      './textures/environmentMaps/0/py.jpg',
+      './textures/environmentMaps/0/ny.jpg',
+      './textures/environmentMaps/0/pz.jpg',
+      './textures/environmentMaps/0/nz.jpg',
+    ])
+    // 色彩空间
+    environmentMap.encoding = THREE.sRGBEncoding
+    // 场景贴图
+    scene.background = environmentMap
+    scene.environment = environmentMap
+
+    gui.add(debugObject, 'envMapIntensity').min(0).max(10).step(0.01).onChange(updateAllMaterials)
+
+    // 模型
+    gltfLoader.load('./models/FlightHelmet/glTF/FlightHelmet.gltf', gltf => {
+      gltf.scene.scale.set(10, 10, 10)
+      gltf.scene.position.set(0, -4, 0)
+      gltf.scene.rotation.y = Math.PI / 2
+      scene.add(gltf.scene)
+      gui.add(gltf.scene.rotation, 'y').min(-Math.PI).max(Math.PI).step(0.01).name('rotation')
+      updateAllMaterials()
+    })
+
+    // 汉堡包
+    gltfLoader.load('./models/hamburger.glb', gltf => {
+      console.log(gltf.scene)
+      gltf.scene.position.set(3, -3, 0)
+      gltf.scene.rotation.y = Math.PI / 2
+      scene.add(gltf.scene)
+      updateAllMaterials()
+    })
+
+    // 光源
+    const directionalLight = new THREE.DirectionalLight('#ffffff', 3)
+    directionalLight.position.set(0.25, 3, -2.25)
+    directionalLight.castShadow = true
+    directionalLight.shadow.mapSize.set(1024, 1024)
+    directionalLight.shadow.camera.far = 15
+    directionalLight.shadow.normalBias = 0.05
+    scene.add(directionalLight)
+
+    const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight)
+    scene.add(directionalLightHelper)
+
+    gui.add(directionalLight, 'intensity').min(0).max(10).step(0.01)
+    gui.add(directionalLight.position, 'x').min(-5).max(5).step(0.01)
+    gui.add(directionalLight.position, 'y').min(-5).max(5).step(0.01)
+    gui.add(directionalLight.position, 'z').min(-5).max(5).step(0.01)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+      renderer.setPixelRatio(window.devicePixelRatio)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.set(4, 1, -4)
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.physicallyCorrectLights = true
+    // 色彩空间
+    renderer.outputEncoding = THREE.sRGBEncoding
+    // 色调映射
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1
+    // 抗锯齿
+    renderer.antialias = true
+    // 阴影
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+    gui.add(renderer, 'toneMapping', {
+      No: THREE.NoToneMapping,
+      Linear: THREE.LinearToneMapping,
+      Reinhard: THREE.ReinhardToneMapping,
+      Cineon: THREE.CineonToneMapping,
+      ACESFilmic: THREE.ACESFilmicToneMapping
+    }).onChange(val => {
+      renderer.toneMapping = Number(val)
+      updateAllMaterials()
+    })
+    gui.add(renderer, 'toneMappingExposure').min(0).max(10).step(0.01)
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+
+    // 动画
+    const render = () => {
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
