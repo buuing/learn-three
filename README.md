@@ -117,7 +117,7 @@
   - 通过 ThreeJS 给顶点着色器传值, 然后再传递给片元着色器
   - 使用着色器处理纹理和 uv , 并实现一个国旗飘动的效果
 
-<!-- - 28 - Shader patterns -->
+- 28 - Shader patterns
 
 <!-- - 29 - Raging sea -->
 
