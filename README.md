@@ -120,7 +120,8 @@
 - 28 - Shader patterns
   - 学习如何通过 `uv` 坐标创建各种形状, 并将颜色混入其中
 
-<!-- - 29 - Raging sea -->
+- 29 - Raging sea
+  - 使用着色器制作一个海浪起伏的特效
 
 <!-- - 30 - Animated galaxy -->
 
