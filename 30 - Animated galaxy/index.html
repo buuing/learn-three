@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <link rel="stylesheet" href="../lib/index.css"></link>
+  <canvas id="webgl"></canvas>
+  <script id="vertexShader" type="x-shader/x-vertex">
+    uniform float uTime;
+    uniform float uSize;
+    attribute float aScale;
+    attribute vec3 aRandom;
+    varying vec3 vColor;
+
+    void main() {
+      // 位置
+      vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+      float angle = atan(modelPosition.x, modelPosition.z);
+      float distanceToCenter = length(modelPosition.xz);
+      float angleOffset = (1.0 / distanceToCenter) * uTime * 0.2;
+      angle += angleOffset;
+
+      modelPosition.x = cos(angle) * distanceToCenter;
+      modelPosition.z = sin(angle) * distanceToCenter;
+      modelPosition.xyz += aRandom.xyz;
+
+      vec4 viewPosition = viewMatrix * modelPosition;
+      vec4 projectedPosition = projectionMatrix * viewPosition;
+      gl_Position = projectedPosition;
+
+      // 大小
+      gl_PointSize = uSize * aScale;
+      gl_PointSize *= (1.0 / -viewPosition.z);
+
+      // 颜色
+      vColor = color;
+    }
+  </script>
+
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    varying vec3 vColor;
+
+    void main() {
+      // 圆点
+      // float strength = distance(gl_PointCoord, vec2(0.5));
+      // strength = 1.0 - step(0.5, strength);
+
+      // 散射点
+      // float strength = distance(gl_PointCoord, vec2(0.5));
+      // strength = 1.0 - strength * 2.0;
+
+      // 光点
+      float strength = distance(gl_PointCoord, vec2(0.5));
+      strength = 1.0 - strength;
+      strength = pow(strength, 10.0);
+
+      vec3 color = mix(vec3(0.0), vColor, strength);
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from '../lib/three.esm.js'
+    import { OrbitControls } from '../lib/OrbitControls.js'
+    import { GUI } from '../lib/dat.gui.js'
+
+    // 着色器
+    const galaxyVertexShader = document.querySelector('#vertexShader').innerText
+    const galaxyFragmentShader = document.querySelector('#fragmentShader').innerText
+
+    // 场景
+    const scene = new THREE.Scene()
+
+    // 默认参数
+    const parameters = {
+      count: 200000,
+      radius: 5,
+      branches: 3,
+      randomness: 0.3,
+      randomPower: 3,
+      insideColor: '#ff6030',
+      outsideColor: '#1b3984',
+    }
+
+    // debug
+    const gui = new GUI({ width: 300 })
+
+    // 银河系
+    let geometry = null
+    let material = null
+    let galaxy = null
+    const generateGalaxy = () => {
+      // 销毁
+      if (galaxy) {
+        geometry.dispose()
+        material.dispose()
+        scene.remove(galaxy)
+      }
+
+      // 几何体
+      geometry = new THREE.BufferGeometry()
+      const positions = new Float32Array(parameters.count * 3)
+      const colors = new Float32Array(parameters.count * 3)
+      const scales = new Float32Array(parameters.count * 1)
+      const randomness = new Float32Array(parameters.count * 3)
+
+      const insideColor = new THREE.Color(parameters.insideColor)
+      const outsideColor = new THREE.Color(parameters.outsideColor)
+
+      for (let i = 0; i < parameters.count; i++) {
+        const i3 = i * 3
+
+        // 位置
+        const radius = Math.random() * parameters.radius
+        const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2
+
+        positions[i3 + 0] = Math.cos(branchAngle) * radius
+        positions[i3 + 1] = 0
+        positions[i3 + 2] = Math.sin(branchAngle) * radius
+
+        randomness[i3 + 0] = Math.pow(Math.random(), parameters.randomPower) * (Math.random() < 0.5 ? -1 : 1) * parameters.randomness
+        randomness[i3 + 1] = Math.pow(Math.random(), parameters.randomPower) * (Math.random() < 0.5 ? -1 : 1) * parameters.randomness
+        randomness[i3 + 2] = Math.pow(Math.random(), parameters.randomPower) * (Math.random() < 0.5 ? -1 : 1) * parameters.randomness
+
+        // 颜色
+        const mixedColor = insideColor.clone()
+        mixedColor.lerp(outsideColor, radius / parameters.radius)
+
+        colors[i3 + 0] = mixedColor.r
+        colors[i3 + 1] = mixedColor.g
+        colors[i3 + 2] = mixedColor.b
+
+        // 位置
+        scales[i] = Math.random()
+      }
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+      geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+      geometry.setAttribute('aRandom', new THREE.BufferAttribute(randomness, 3))
+
+      // 材质
+      material = new THREE.ShaderMaterial({
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+        vertexShader: galaxyVertexShader,
+        fragmentShader: galaxyFragmentShader,
+        uniforms: {
+          uTime: { value: 0 },
+          uSize: { value: 30 * renderer.getPixelRatio() },
+        }
+      })
+
+      // 物体
+      galaxy = new THREE.Points(geometry, material)
+      scene.add(galaxy)
+    }
+
+    gui.add(parameters, 'count').min(100).max(100000).step(100).onFinishChange(generateGalaxy)
+    gui.add(parameters, 'radius').min(0.01).max(20).step(0.01).onFinishChange(generateGalaxy)
+    gui.add(parameters, 'branches').min(2).max(20).step(1).onFinishChange(generateGalaxy)
+    gui.add(parameters, 'randomness').min(0).max(2).step(0.001).onFinishChange(generateGalaxy)
+    gui.add(parameters, 'randomPower').min(1).max(10).step(0.001).onFinishChange(generateGalaxy)
+    gui.addColor(parameters, 'insideColor').onFinishChange(generateGalaxy)
+    gui.addColor(parameters, 'outsideColor').onFinishChange(generateGalaxy)
+
+    // 画布大小
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    // 监听页面尺寸发生变化时
+    window.addEventListener('resize', () => {
+      // 重置画布宽高
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+      // 更新相机
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+      // 更新渲染器
+      renderer.setSize(sizes.width, sizes.height)
+      renderer.setPixelRatio(window.devicePixelRatio)
+    })
+
+    // 相机
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    camera.position.x = 3
+    camera.position.y = 3
+    camera.position.z = 3
+    scene.add(camera)
+
+    // 渲染器
+    const canvas = document.querySelector('#webgl')
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(window.devicePixelRatio)
+
+    generateGalaxy()
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, canvas)
+
+    // 时间
+    const clock = new THREE.Clock()
+
+    const render = () => {
+      const time = clock.getElapsedTime()
+      material.uniforms.uTime.value = time
+      // 更新控制器
+      controls.update()
+      // 渲染
+      renderer.render(scene, camera)
+      window.requestAnimationFrame(render)
+    }
+    render()
+  </script>
+</body>
+</html>
